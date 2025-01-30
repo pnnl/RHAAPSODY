@@ -5,8 +5,8 @@ from pathlib import Path
 import numpy as np
 import tensorflow as tf
 
-from keras.layers import Flatten, Dense
-from keras.models import Model
+from tensorflow.keras.layers  import Flatten, Dense
+from tensorflow.keras.models import Model
 
 from scipy.spatial import distance
 
