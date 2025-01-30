@@ -13,7 +13,7 @@ UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 
 ## Description
-Brief description of what the project does.
+RHAAPSODY is an analysis pipeline designed for automated processing of RHEED (Reflection High-Energy Electron Diffraction) imagery. The pipeline includes functionalities for image processing, data analysis, visualization, and a messaging interface. This tool aims to streamline the analysis of RHEED patterns, making it easier for researchers to extract meaningful insights from their data.
 
 ## Table of Contents
 - [Description](#description)
