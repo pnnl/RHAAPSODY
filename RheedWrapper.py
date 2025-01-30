@@ -1,7 +1,5 @@
 import os
 import sys
-import math
-import json
 import time
 import gc
 from ZMQMessenger import ZMQMessenger
@@ -30,7 +28,7 @@ root_directory = "c:\\"
 Rheed_subscriber = None
 
 # pnl_server='WE37491.pnl.gov'
-pnl_server='130.20.173.71'
+generic_server='130.20.173.71'
 labnet_server='WE27790.labnet.pnl.gov'
 
 def ConnectRheed(publisher_port, subscriber_port, subscriber_ip):
@@ -83,7 +81,7 @@ def main():
     # start the messenger
     # note these are the reverse of the control connections
     # publisher_port, subscriber_port, subscriber_ip
-    ConnectRheed(5556, 5555, pnl_server)
+    ConnectRheed(5556, 5555, generic_server)
 
     count = 0
     while True:
