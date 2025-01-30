@@ -11,3 +11,23 @@ BATTELLE
 for the
 UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
+
+## Description
+Brief description of what the project does.
+
+## Table of Contents
+- [Description](#description)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+
+
+## Installation
+
+To install the required packages, run the following command:
+
+```bash
+pip install -r requirements.txt
+```
