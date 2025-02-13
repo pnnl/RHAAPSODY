@@ -1,10 +1,3 @@
-import zmq
-import zmq.ssh
-import json
-import base64
-import uuid
-import time
-
 """Disclaimer
 
 This material was prepared as an account of work sponsored by an agency of the United States Government.  Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any of their employees, nor any jurisdiction or organization that has cooperated in the development of these materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process disclosed, or represents that its use would not infringe privately owned rights.
@@ -17,7 +10,15 @@ UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 """
 
-class ZMQMessenger:  
+import zmq
+import zmq.ssh
+import json
+import base64
+import uuid
+import time
+
+
+class ZMQMessenger:
 
     def __init__(self, ip, port, connection_type, identifier="", ssh_server=""):
         self.id = identifier
@@ -70,28 +71,36 @@ class ZMQMessenger:
         self.socket.subscribe("")  # Subscribe to all messages, no filter
 
     def ConnectAsRequest(self):
-            self.context = zmq.Context()
-            self.socket = self.context.socket(zmq.REQ)
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REQ)
 
-            connect = "tcp://*:" + str(self.port)
-            print(self.id + " request binding to:  " + connect)
+        connect = "tcp://*:" + str(self.port)
+        print(self.id + " request binding to:  " + connect)
 
-            self.socket.bind(connect)
+        self.socket.bind(connect)
 
     def ConnectAsTunnelRequest(self):
 
-            connect = "tcp://" + self.ip + ":" + str(self.port)
+        connect = "tcp://" + self.ip + ":" + str(self.port)
 
-            print(self.id + " request binding to:  " + connect)
+        print(self.id + " request binding to:  " + connect)
 
-            print("server:  ", self.ssh_server)
+        print("server:  ", self.ssh_server)
 
-            self.context = zmq.Context()
-            self.socket = self.context.socket(zmq.REQ)
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REQ)
 
-            print("before tunnel")
-            zmq.ssh.tunnel.tunnel_connection(self.socket, "tcp://10.70.23.228:5558", "zmq@we36964ubuntuq.labnet.pnl.gov", keyfile="zmq_private")
-            print("after tunnel")
+        # passthrough to GrandArm machine
+        # zmq.ssh.tunnel.tunnel_connection(self.socket, connect, self.ssh_server, keyfile="zmq_private")
+
+        print("before tunnel")
+        zmq.ssh.tunnel.tunnel_connection(
+            self.socket,
+            "tcp://10.70.23.228:5558",
+            "zmq@we36964ubuntuq.labnet.pnl.gov",
+            keyfile="zmq_private",
+        )
+        print("after tunnel")
 
     # revisit this, these are hacks I made to make it work on the other side of the tunnel
     def ConnectAsReply(self):
@@ -108,10 +117,12 @@ class ZMQMessenger:
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.REP)
 
+        # connect = "tcp://" + self.ip + ":" + str(self.port)
         connect = "tcp://*:" + str(self.port)
 
         print(self.id + " reply connecting to:  " + connect)
 
+        # self.socket.connect(connect)
 
         self.socket.bind(connect)
 
@@ -119,9 +130,9 @@ class ZMQMessenger:
         pairedSocket.ReplySocket = self
         self.ReplySocket = pairedSocket
 
-    def SendImageBinary (self, filename, flags):
+    def SendImageBinary(self, filename, flags):
         try:
-            f = open(filename, 'rb')
+            f = open(filename, "rb")
             img_bytes = bytearray(f.read())
             f.close()
 
@@ -135,7 +146,7 @@ class ZMQMessenger:
             return None
 
     def NewHeader(self, message_type, params, u_id):
-        """ header is a dictionary of meta data including the parameters for the message """
+        """header is a dictionary of meta data including the parameters for the message"""
 
         try:
             message = {"msgType": message_type}
@@ -155,7 +166,7 @@ class ZMQMessenger:
             return
 
     def SendHeader(self, header, flags):
-        """ header is a dictionary of meta data including the parameters for the message """
+        """header is a dictionary of meta data including the parameters for the message"""
 
         try:
             # send the header
@@ -173,7 +184,7 @@ class ZMQMessenger:
         print(json_formatted_str)
 
     def SendImage(self, filename, header):
-        """ multi-part message, header and image """
+        """multi-part message, header and image"""
         """ header is a dictionary of meta data """
         """ image is a byte array """
 
@@ -190,7 +201,6 @@ class ZMQMessenger:
         except Exception as e:
             print(e)
             return
-
 
     def GetSingleImage(self, filename):
         """
@@ -211,10 +221,10 @@ class ZMQMessenger:
             image = bytearray(base64.b64decode(img))
 
             try:
-                f = open(filename, 'wb')
+                f = open(filename, "wb")
                 f.write(image)
                 f.close()
-            except:
+            except Exception:
                 print("error extracting image")
                 return None
 
@@ -226,14 +236,13 @@ class ZMQMessenger:
             return None
 
     def ClearQueue(self):
-        """ clears the subscribe queue"""
+        """clears the subscribe queue"""
         data = self.socket.recv(zmq.NOBLOCK)
         while data is not None:
             data = self.socket.recv(zmq.NOBLOCK)
 
-
     def GetHeader(self, message_type):
-        """ returns a header of a certain message type """
+        """returns a header of a certain message type"""
 
         try:
             # print("read header")
@@ -265,9 +274,9 @@ class ZMQMessenger:
             return header
 
         # catches the NO_BLOCK exception
-        except Exception as e:
+        except Exception:
+            # print(e)
             return None
-
 
     def GetImage(self, destination_filename):
         args = dict()
@@ -298,7 +307,6 @@ class ZMQMessenger:
     def ReturnFunction(self, header):
 
         self.SendHeader(header, 0)
-
 
     def CallFunction(self, function, params, u_id):
 
@@ -333,7 +341,7 @@ class ZMQMessenger:
             head = receiver.GetHeader("pingReply")
             print(".", end="", flush=True)
 
-        reply = (head is not None)
+        reply = head is not None
 
         print(sender.id + " ping = " + str(reply))
         return reply

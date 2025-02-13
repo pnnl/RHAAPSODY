@@ -22,7 +22,10 @@ import math
 
 mplstyle.use("fast")
 
-min_max_norm = lambda x: (x - x.min()) / (x.max() - x.min())
+
+def min_max_norm(x):
+    """Calculate the min max norm of x."""
+    return (x - x.min()) / (x.max() - x.min())
 
 
 class GraphClustering:
