@@ -10,31 +10,33 @@ for the
 UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 """
+
+import json
+import time
 from pathlib import Path
 
 import h5py
 import numpy as np
+import pandas as pd
 
 import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import MaxNLocator
 
-from PIL import Image as im
 import ruptures as rpt
 
-from sklearn.decomposition import PCA
-
-from kernel_matrix import KernelMatrix
-
 import matplotlib.style as mplstyle
-mplstyle.use('fast')
+
+mplstyle.use("fast")
+
 
 def format_fn(tick_val, tick_pos):
     if int(tick_val) in xs:
         return labels[int(tick_val)]
     else:
-        return ''
+        return ""
+
 
 def pelt_changepoints(data: np.ndarray, cost: callable, pen: float, **pelt_kwargs):
     """Get the pelt changepoints for data, given cost."""
@@ -143,6 +145,48 @@ def read_h5_data(h5_path: Path, h5_file_key: str = None):
     return data
 
 
+def parse_changepoint_data(root, sample, experiment_dir):
+    basedir = Path(root) / sample / experiment_dir
+    df = pd.DataFrame()
+    for file in sorted((basedir / "Analysis").glob("out_message-*.json")):
+        with open(file, "r") as f:
+            data = json.load(f)
+        x = time.strptime(data["parameters"]["change_point_at"], "%H:%M:%S")
+        cpa = datetime.timedelta(
+            hours=x.tm_hour, minutes=x.tm_min, seconds=x.tm_sec
+        ).total_seconds()
+
+        x = time.strptime(data["parameters"]["change_detected_at"], "%H:%M:%S")
+        cpd = datetime.timedelta(
+            hours=x.tm_hour, minutes=x.tm_min, seconds=x.tm_sec
+        ).total_seconds()
+
+        tmp = pd.DataFrame(
+            {
+                "step": [int(str(file).split("-")[-1].replace(".json", ""))],
+                "change_point_at": [data["parameters"]["change_point_at"]],
+                "change_point_step": [int(cpa)],
+                "change_detected_at": [data["parameters"]["change_detected_at"]],
+                "change_detected_step": [int(cpd)],
+            }
+        )
+        df = pd.concat([df, tmp], ignore_index=True, sort=False)
+
+    changepoints_df = df.drop_duplicates(
+        subset=[
+            "change_point_at",
+            "change_point_step",
+            "change_detected_at",
+            "change_detected_step",
+        ]
+    )
+    changepoints_df.to_csv(
+        basedir / "all_change_points.csv",
+        index=False,
+    )
+    return changepoints_df
+
+
 class ChangepointDetection:
     """Class for the changepoint detection."""
 
@@ -150,7 +194,7 @@ class ChangepointDetection:
         self,
         cost_threshold: float = 0.06,
         window_size=np.inf,
-        min_time_between_changepoints:int=10,
+        min_time_between_changepoints: int = 10,
     ):
         """Initialize self."""
         self.cost_threshold = cost_threshold
@@ -176,11 +220,11 @@ class ChangepointDetection:
         self.first_plot = True
 
     @staticmethod
-    def segmented_cost(matrix: np.ndarray, tau:int, start:int=0, end:int=None):
+    def segmented_cost(matrix: np.ndarray, tau: int, start: int = 0, end: int = None):
         """Return the cost of segmenting the square matrix at tau."""
         sub_matrix_1 = matrix[start:tau, start:tau]
         val1 = np.diagonal(sub_matrix_1).sum()
-        val1 -= sub_matrix_1.sum() / (tau-start)
+        val1 -= sub_matrix_1.sum() / (tau - start)
 
         sub_matrix_2 = matrix[tau:end, tau:end]
         val2 = np.diagonal(sub_matrix_2).sum()
@@ -194,9 +238,12 @@ class ChangepointDetection:
 
     def maximize_segmented_cost(self, matrix, current_time, window_start):
         """Maximize the segmented cost for the square matrix on an interval."""
-        xs = np.arange(window_start + 1, current_time, 3).astype(int)
-        vals = [self.segmented_cost(matrix, x, start=window_start, end=current_time) for x in xs]
-        
+        xs = np.arange(window_start + 1, current_time, 1).astype(int)
+        vals = [
+            self.segmented_cost(matrix, x, start=window_start, end=current_time)
+            for x in xs
+        ]
+
         if len(vals) > 0:
             max_idx = np.argmax(vals)
             max_time = xs[max_idx]
@@ -212,8 +259,8 @@ class ChangepointDetection:
                 "Cannot do changepoint detection on a rectangular matrix, "
                 f"({matrix.shape[0]}, {matrix.shape[1]})."
             )
-        current_time = step 
-        window_start = self.changepoints[-1] 
+        current_time = step  # matrix.shape[0]
+        window_start = max([self.changepoints[-1], current_time - self.window_size])
         vals = self.maximize_segmented_cost(
             matrix=matrix, current_time=current_time, window_start=window_start
         )
@@ -223,7 +270,10 @@ class ChangepointDetection:
             proposed_changepoint = vals[0]
             changepoint_amplitude = vals[1]
 
-            if current_time - self.changepoints[-1] > self.min_time_between_changepoints:
+            if (
+                current_time - self.changepoints[-1]
+                > self.min_time_between_changepoints
+            ):
                 if changepoint_amplitude > self.cost_threshold:
                     self.changepoints.append(proposed_changepoint)
                     self.detected_times.append(current_time)
@@ -254,43 +304,63 @@ class ChangepointDetection:
         proposed_changepoint=None,
         max_display_window: int = np.inf,
     ):
-        """Get the image associated to the display window."""        
-        fig,ax = plt.subplots(1,1,figsize=(self.width, self.height), dpi=self.dpi)
+        """Get the image associated to the display window."""
+        fig, ax = plt.subplots(1, 1, figsize=(self.width, self.height), dpi=self.dpi)
 
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.10)
 
         fig.colorbar(
             matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(-1, 1)),
-            cax=cax, ticks=[-1, 0, 1],
+            cax=cax,
+            ticks=[-1, 0, 1],
             orientation="vertical",
         )
-        cax.set_ylabel('Similarity', fontsize=24, labelpad=-8)
-        cax.tick_params(axis='y', which='major', labelsize=22)
+        cax.set_ylabel("Similarity", fontsize=24, labelpad=-8)
+        cax.tick_params(axis="y", which="major", labelsize=22)
 
         window_start = max([0, step - max_display_window])
 
-        ax.pcolorfast(matrix, vmin=-1, vmax=1) 
+        ax.pcolorfast(matrix, vmin=-1, vmax=1)
         ax.invert_yaxis()
-            
+
+        # TODO: fix ticks so they match the step we're on
+        if False:  # window_start > 0:
+            labels = np.arange(max_display_window, step, 1)
+            ax.xaxis.set_major_formatter(format_fn)
+            ax.xaxis.set_major_locator(MaxNLocator(6, integer=True))
+            ax.yaxis.set_major_formatter(format_fn)
+            ax.yaxis.set_major_locator(MaxNLocator(6, integer=True))
+
         for cp in self.changepoints:
             if cp - window_start > 0:
                 ax.axvline(cp - window_start, c="r", alpha=0.6)
+                # ax.axhline(cp - window_start, c="r", alpha=0.6)
 
-        ax.tick_params(axis='both', which='major', labelsize=22)
-        ax.set_xlabel('RHEED Frame', fontsize=24)
-        ax.set_ylabel('RHEED Frame', fontsize=24)
-        
+        ax.tick_params(axis="both", which="major", labelsize=22)
+        ax.set_xlabel("RHEED Frame", fontsize=24)
+        ax.set_ylabel("RHEED Frame", fontsize=24)
+
         if self.first_plot:
             plt.tight_layout(pad=3)
-            self.layout = {par : getattr(fig.subplotpars, par) for par in ["left", "right", "bottom", "top", "wspace", "hspace"]}
+            self.layout = {
+                par: getattr(fig.subplotpars, par)
+                for par in ["left", "right", "bottom", "top", "wspace", "hspace"]
+            }
             self.first_plot = False
         else:
             fig.subplots_adjust(**self.layout)
 
-        plt.savefig(savepath, format='png', dpi=self.dpi, transparent=False, facecolor='white', pad_inches=1)
+        plt.savefig(
+            savepath,
+            format="png",
+            dpi=self.dpi,
+            transparent=False,
+            facecolor="white",
+            pad_inches=1,
+        )
         plt.close()
-    
+
     @property
     def current_changepoint(self):
         """Return the most recent changepoint"""

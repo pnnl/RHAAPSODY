@@ -1,19 +1,3 @@
-import cv2
-
-from pathlib import Path
-
-import numpy as np
-import tensorflow as tf
-
-from keras.layers import Flatten, Dense
-from keras.models import Model
-
-from scipy.spatial import distance
-
-from skimage.exposure import equalize_adapthist, equalize_hist
-from skimage.restoration import denoise_wavelet
-from skimage.transform import rescale
-
 """Disclaimer
 
 This material was prepared as an account of work sponsored by an agency of the United States Government.  Neither the United States Government nor the United States Department of Energy, nor Battelle, nor any of their employees, nor any jurisdiction or organization that has cooperated in the development of these materials, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness or any information, apparatus, product, software, or process disclosed, or represents that its use would not infringe privately owned rights.
@@ -25,6 +9,19 @@ for the
 UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 """
+
+import cv2
+
+import numpy as np
+import tensorflow as tf
+
+from keras.layers import Flatten, Dense
+from keras.models import Model
+
+from skimage.exposure import equalize_hist
+from skimage.restoration import denoise_wavelet
+from skimage.transform import rescale
+
 
 def denoise(image: np.ndarray):
     """Denoises and equalizes image
@@ -55,8 +52,8 @@ def create_embedding_model(n=None, m=None):
     flatten = Flatten()
     new_layer2 = Dense(10, activation="softmax", name="my_dense_2")
 
-    _in = vgg16.input  
-    _out = new_layer2(flatten(vgg16.output))  
+    _in = vgg16.input  # vgg16.input
+    _out = new_layer2(flatten(vgg16.output))  # vgg16.get_layer('fc2').output
 
     basemodel = Model(inputs=_in, outputs=vgg16.output)
     return basemodel
@@ -88,10 +85,12 @@ class EmbeddingModel:
 
     def tiff_to_array(self, img) -> np.ndarray:
         """Convert a tiff image to an image array."""
+        # img = cv2.imread(tiff_path)
+
         img1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         return img1
 
     def tiff_to_embedding(self, img) -> np.ndarray:
         """Return the embedding of the image in the given tiff file."""
-        image_array = img 
+        image_array = img  # self.tiff_to_array(img)
         return self.array_to_embedding(image_array)
