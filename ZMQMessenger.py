@@ -90,7 +90,7 @@ class ZMQMessenger:
             self.socket = self.context.socket(zmq.REQ)
 
             print("before tunnel")
-            zmq.ssh.tunnel.tunnel_connection(self.socket, "tcp://10.70.23.228:5558", "zmq@we36964ubuntuq.labnet.pnl.gov", keyfile="zmq_private")
+            zmq.ssh.tunnel.tunnel_connection(self.socket, "tcp://127.0.0.1:5558", "zmq@localhost", keyfile="zmq_private")
             print("after tunnel")
 
     # revisit this, these are hacks I made to make it work on the other side of the tunnel
