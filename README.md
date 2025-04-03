@@ -31,3 +31,10 @@ To install the required packages, run the following command:
 ```bash
 pip install -r requirements.txt
 ```
+
+## Running the example script
+To run the example script, run the following command in the python environment where the above packages are installed:
+```bash
+python auto_rheeder.py
+```
+Note: Please follow the path convention as depicted in the "auto_rheeder.py" file for input raw image data and output directory. 

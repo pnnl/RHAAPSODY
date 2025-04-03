@@ -245,7 +245,8 @@ class AutoRHEEDer:
 
 if __name__ == "__main__":
     gc.disable()
-    root_dir = "~/rheed_workspace"
+    # Staging directory for input and output
+    root_dir = "/home/userid/rheed_workspace"
     rheed_analysis = AutoRHEEDer(
         root=root_dir,
         data_processor=EmbeddingModel(),
@@ -254,18 +255,25 @@ if __name__ == "__main__":
         starting_period=30,
         max_embeddings=2502,
         max_steps=2500,
+        message_type="result"
         )
 
-    # images should be located in /root/experiment/loop/directory/
-    image_paths = sorted(Path(root_dir+"/111723B TiO2-STO goes rough/Loop1/Raw").rglob("Run*.tiff"))
+    # raw images should be located in /root/experiment/loop/directory/
+    image_paths = sorted(Path(root_dir+"/111723B TiO2-STO goes rough/Loop1/raw").rglob("Run*.tiff"))
+    
+    # create results directory, if not already present. Follows the same directory path convention for input image + message_type (str) name in AutoRHEEDer class.
+    result_dir=root_dir+"/111723B TiO2-STO goes rough/Loop1/result"
+    if not os.path.exists(result_dir):
+        os.mkdir(result_dir)
+        
     for p, image_path in enumerate(image_paths):
         if p>rheed_analysis.max_embeddings:
             break
-        incoming_message={'message': {'msgType': 'Raw', 
+        incoming_message={'message': {'msgType': 'raw', 
                                         'uuid': 'xyz'},
                           'parameters': {'experiment': '111723B TiO2-STO goes rough', 
-                                       'loop': 'Loop2', 
-                                       'directory': 'Raw', 
+                                       'loop': 'Loop1', 
+                                       'directory': 'raw', 
                                        'filename': image_path}
                          }
         
