@@ -79,8 +79,8 @@ class GraphClustering:
         colors = (
             100 * cm.Set2.colors
         )  # repeat a bunch of times so colors are always available
-        self.clusters = [colors[c] for c in self.cluster_method.fit_predict(self.A)]
-
+        # self.clusters = [colors[c] for c in self.cluster_method.fit_predict(self.A)]
+        self.clusters =  [cm.Set2.colors[c] for c in np.zeros(len(self.A)).astype(int)]
         # # SVD
         # self.pos = self.graph_layout.fit(self.A) # TODO: It appears this was done twice
 

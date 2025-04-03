@@ -33,7 +33,7 @@ from embeddings import EmbeddingModel
 from change_detection import ChangepointDetection, parse_changepoint_data
 from kernel_matrix import KernelMatrix
 from graph import GraphClustering
-from segment import Segment
+# from segment import Segment
 
 
 # for csv writing
@@ -54,7 +54,7 @@ class AutoRHEEDer:
         data_processor: callable,
         change_detector: callable,
         classifier: callable,
-        segmenter: callable,
+        # segmenter: callable,
         starting_period: int = 60,
         max_embeddings: int = 2000,
         max_steps: int = 500,
@@ -80,7 +80,7 @@ class AutoRHEEDer:
         self.data_processor = data_processor
         self.change_detector = change_detector
         self.classifier = classifier
-        self.segmenter = segmenter
+        # self.segmenter = segmenter
         self.starting_period = starting_period
         self.message_type = message_type
         self.max_embeddings = max_embeddings
@@ -156,7 +156,9 @@ class AutoRHEEDer:
 
         self.changefile = self.filetag + "changepoint.png"
         self.graphfile = self.filetag + "graph.png"
-        self.segmentfile = self.filetag + "segmentation.png"
+        # self.segmentfile = self.filetag + "segmentation.png"
+        # self.csvfile = self.filetag + "stabilization.csv"
+        self.stabilityfile = self.filetag + "stability.png"
         self.csvfile = self.filetag + "stabilization.csv"
 
     def assemble_outgoing_message(self):
@@ -176,7 +178,8 @@ class AutoRHEEDer:
                 "change_detected_at": str(timedelta(seconds=self.change_detected)),
                 "changefile": self.changefile,
                 "graphfile": self.graphfile,
-                "segmentfile": self.segmentfile,
+                # "segmentfile": self.segmentfile,
+                "stabilityfile": self.stabilityfile,
             },
         }
         return message
@@ -207,7 +210,7 @@ class AutoRHEEDer:
             self.image_size = self.im_precrop.shape
             self.change_detector.set_plot_size(plot_size=self.image_size, dpi=self.dpi)
             self.classifier.set_plot_size(plot_size=self.image_size, dpi=self.dpi)
-            self.segmenter.set_plot_size(plot_size=self.image_size, dpi=self.dpi)
+            # self.segmenter.set_plot_size(plot_size=self.image_size, dpi=self.dpi)
 
         # TODO flexible cropping
         # self.crop = ((12,150),(200,480))
@@ -266,8 +269,9 @@ class AutoRHEEDer:
             # Graph clustering analysis
             self.classifier.cluster_and_plot(
                 self.A,
-                os.path.join(self.savedir, self.segmentfile),
+                # os.path.join(self.savedir, self.segmentfile),
                 os.path.join(self.savedir, self.graphfile),
+                os.path.join(self.savedir, self.stabilityfile),
                 os.path.join(self.savedir, self.csvfile),
             )
             # p2 = Process(target=self.classifier.cluster_and_plot, args=(self.A, os.path.join(self.savedir, self.graphfile)))
@@ -294,43 +298,11 @@ class AutoRHEEDer:
 
 if __name__ == "__main__":
     gc.disable()
-<<<<<<< HEAD
-    # Staging directory for input and output
-    root_dir = "/home/userid/rheed_workspace"
-    rheed_analysis = AutoRHEEDer(
-        root=root_dir,
-        data_processor=EmbeddingModel(),
-        change_detector=ChangepointDetection(cost_threshold=0.05, window_size=300, min_time_between_changepoints=10),
-        classifier=GraphClustering(resolution=1, seed=123),
-        starting_period=30,
-        max_embeddings=2502,
-        max_steps=2500,
-        message_type="result"
-        )
 
-    # raw images should be located in /root/experiment/loop/directory/
-    image_paths = sorted(Path(root_dir+"/111723B TiO2-STO goes rough/Loop1/raw").rglob("Run*.tiff"))
-    
-    # create results directory, if not already present. Follows the same directory path convention for input image + message_type (str) name in AutoRHEEDer class.
-    result_dir=root_dir+"/111723B TiO2-STO goes rough/Loop1/result"
-    if not os.path.exists(result_dir):
-        os.mkdir(result_dir)
-        
-    for p, image_path in enumerate(image_paths):
-        if p>rheed_analysis.max_embeddings:
-            break
-        incoming_message={'message': {'msgType': 'raw', 
-                                        'uuid': 'xyz'},
-                          'parameters': {'experiment': '111723B TiO2-STO goes rough', 
-                                       'loop': 'Loop1', 
-                                       'directory': 'raw', 
-                                       'filename': image_path}
-                         }
-        
-=======
     root = "/home/svcAtScaleNodes/RHEED_DEMO/"
     experiment = "111723B TiO2-STO goes rough"
-    loop = "JVSTA_example"  # 'JVSTA'
+    # loop = "JVSTA_example"  # 'JVSTA'
+    loop = "loop1"
 
     # parameters
     changepoint_cost_threshold = 0.025
@@ -361,7 +333,7 @@ if __name__ == "__main__":
             seed=123,
             window=graph_clustering_window,
         ),
-        segmenter=Segment(),
+        # segmenter=Segment(),
         starting_period=starting_period,
         max_embeddings=max_embeddings,
         max_steps=max_steps,
@@ -384,7 +356,7 @@ if __name__ == "__main__":
             },
         }
         start = datetime.now()
->>>>>>> JVSTA_demo
+
         out_message = rheed_analysis.receive_message(incoming_message)
 
         total_time = (datetime.now() - start).total_seconds()
@@ -395,7 +367,12 @@ if __name__ == "__main__":
         ) as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fields)
             writer.writerow(log)
-
+        
+        # Make sure "Analysis" directory is available:
+        result_dir = Path(root, experiment, loop, "Analysis")
+        if not os.path.exists(result_dir):
+            os.mkdir(result_dir)
+            
         with open(
             Path(root, experiment, loop)
             / "Analysis"
