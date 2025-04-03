@@ -299,7 +299,7 @@ class AutoRHEEDer:
 if __name__ == "__main__":
     gc.disable()
 
-    root = "/home/svcAtScaleNodes/RHEED_DEMO/"
+    root = "/home/userid/RHEED_DEMO/"
     experiment = "111723B TiO2-STO goes rough"
     # loop = "JVSTA_example"  # 'JVSTA'
     loop = "loop1"
