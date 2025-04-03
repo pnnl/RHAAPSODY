@@ -245,10 +245,9 @@ class AutoRHEEDer:
 
 if __name__ == "__main__":
     gc.disable()
-        
+    root_dir = "~/rheed_workspace"
     rheed_analysis = AutoRHEEDer(
-        # root="/home/svcAtScaleNodes/RHEED_DEMO/",
-        root="/Users/amat841/WORKSPACE/ATSCALE/rheed_data/raw_tiffs/",
+        root=root_dir,
         data_processor=EmbeddingModel(),
         change_detector=ChangepointDetection(cost_threshold=0.05, window_size=300, min_time_between_changepoints=10),
         classifier=GraphClustering(resolution=1, seed=123),
@@ -258,20 +257,15 @@ if __name__ == "__main__":
         )
 
     # images should be located in /root/experiment/loop/directory/
-    # image_paths = sorted(Path("/home/svcAtScaleNodes/RHEED_DEMO/111723B TiO2-STO goes rough/Loop1/Raw").rglob("Run*.tiff"))
-    image_paths = sorted(Path("/Users/amat841/WORKSPACE/ATSCALE/rheed_data/raw_tiffs/111723B TiO2-STO goes rough/loop1/raw").rglob("Run*.tiff"))
+    image_paths = sorted(Path(root_dir+"/111723B TiO2-STO goes rough/Loop1/Raw").rglob("Run*.tiff"))
     for p, image_path in enumerate(image_paths):
-
         if p>rheed_analysis.max_embeddings:
             break
-
         incoming_message={'message': {'msgType': 'Raw', 
                                         'uuid': 'xyz'},
                           'parameters': {'experiment': '111723B TiO2-STO goes rough', 
-                                    #    'loop': 'Loop2', 
-                                       'loop': 'loop1', 
-                                    #    'directory': 'Raw', 
-                                       'directory': 'raw',
+                                       'loop': 'Loop2', 
+                                       'directory': 'Raw', 
                                        'filename': image_path}
                          }
         

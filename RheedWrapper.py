@@ -27,9 +27,10 @@ from segment import Segment
 root_directory = "c:\\"
 Rheed_subscriber = None
 
-# pnl_server='WE37491.pnl.gov'
-generic_server='130.20.173.71'
-labnet_server='WE27790.labnet.pnl.gov'
+
+subscribe_server='127.0.0.1' # Ip address of source server
+labnet_server='localhost' # 
+
 
 def ConnectRheed(publisher_port, subscriber_port, subscriber_ip):
     global Rheed_subscriber
@@ -81,7 +82,9 @@ def main():
     # start the messenger
     # note these are the reverse of the control connections
     # publisher_port, subscriber_port, subscriber_ip
-    ConnectRheed(5556, 5555, generic_server)
+
+    ConnectRheed(5556, 5555, subscribe_server)
+
 
     count = 0
     while True:
@@ -103,7 +106,7 @@ if __name__ == "__main__":
     
     # initialize analysis
     rheed_analysis = AutoRHEEDer(
-            root="/mnt/atscale/TestExp",
+            root="/mnt/project/TestExp",
             data_processor=EmbeddingModel(),
             change_detector=ChangepointDetection(cost_threshold=0.05, window_size=300, min_time_between_changepoints=10),
             classifier=GraphClustering(resolution=1, seed=123),
