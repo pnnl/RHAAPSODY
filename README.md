@@ -37,4 +37,4 @@ To run the example script, run the following command in the python environment w
 ```bash
 python auto_rheeder.py
 ```
-Note: Please follow the path convention as depicted in the "auto_rheeder.py" file for input raw image data and output directory. 
+Note: Please update the values for "root", "experiment" and "loop" variable in 'auto_rheeder.py'.
